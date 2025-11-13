@@ -19,15 +19,22 @@ import pyperclip
 import os
 import shutil
 from itertools import islice
+import sys
 
 # ---------------- CONFIG ----------------
 
-URL = "https://chatgpt.com/g/g-p-6910e3729340819184bfbac0f7f6479f-images/project"     # the URL you want pasted after Cmd+T
+URL = '<url here'
 
-FILES_FOLDER = "/Users/tzx/desktop/gpt_automation/images"  # Input folder
+BASE_DIR = os.path.dirname(os.path.realpath(__file__))
+PROJECT_ROOT = os.path.abspath(os.path.join(BASE_DIR, ".."))
+
+FILES_FOLDER = os.path.join(PROJECT_ROOT, "images")
+STYLE_FOLDER = os.path.join(PROJECT_ROOT, "style")
+TEMP_UPLOAD_DIR = os.path.join(PROJECT_ROOT, "tmp_upload")
+OUTPUT_FOLDER = os.path.join(PROJECT_ROOT, "out")
+
 ENABLE_DOWNLOADS = True
 DOWNLOADS_FOLDER = os.path.expanduser("~/Downloads")
-OUTPUT_FOLDER = os.path.join(os.getcwd(), "out")
 
 # Batch control
 BATCH_SIZE = 3
@@ -122,6 +129,46 @@ def cmd_w():
 
 # ---------------- FILESYSTEM HELPERS ----------------
 
+def wipe_tmp_upload():
+    if not os.path.exists(TEMP_UPLOAD_DIR):
+        os.makedirs(TEMP_UPLOAD_DIR, exist_ok=True)
+        return
+
+    for f in os.listdir(TEMP_UPLOAD_DIR):
+        try:
+            path = os.path.join(TEMP_UPLOAD_DIR, f)
+            if os.path.isfile(path) or os.path.islink(path):
+                os.remove(path)
+            elif os.path.isdir(path):
+                shutil.rmtree(path)
+        except Exception as e:
+            print(f"⚠️ Could not remove {f}: {e}")
+
+    print(f"[i] Cleared tmp_upload folder: {TEMP_UPLOAD_DIR}")
+
+
+def copy_initial_style():
+    style_dir = os.path.dirname(STYLE_FOLDER)
+    files = sorted([
+        f for f in os.listdir(style_dir)
+        if os.path.isfile(os.path.join(style_dir, f)) and not f.startswith(".")
+    ])
+    if not files:
+        print("⚠️ No style files found.")
+        return None
+
+    first_file = files[0]
+    src = os.path.join(style_dir, first_file)
+    ext = os.path.splitext(first_file)[1]
+    dest = os.path.join(TEMP_UPLOAD_DIR, "zzzzzz_style" + ext)
+
+    os.makedirs(TEMP_UPLOAD_DIR, exist_ok=True)
+    shutil.copy2(src, dest)
+
+    print(f"[i] Copied initial style file → {dest}")
+    return dest
+
+
 def create_download_spacers(count=20):
     """Create 'spacer' empty files to mark the Downloads folder before downloads."""
     os.makedirs(DOWNLOADS_FOLDER, exist_ok=True)
@@ -194,8 +241,8 @@ def move_latest_download(target_name):
 
 # ---------------- MISC HELPERS ----------------
 
-STYLE_IMAGE = "/Users/tzx/desktop/gpt_automation/style/style.png"
-TEMP_UPLOAD_DIR = "/Users/tzx/desktop/gpt_automation/tmp_upload"
+def open_chrome():
+    osa('tell application "Google Chrome" to activate')
 
 def add_base_image(path):
     shutil.copy2(path, TEMP_UPLOAD_DIR)
@@ -321,6 +368,9 @@ def close_batch_tabs(batch_count):
 
 def main():
     create_download_spacers()
+    copy_initial_style()
+    wipe_tmp_upload()
+    open_chrome()
 
     files = sorted([
         f for f in os.listdir(FILES_FOLDER)
