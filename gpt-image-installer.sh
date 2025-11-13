@@ -29,6 +29,17 @@ else
     git clone "$GIT_URL" "$TARGET_DIR"
 fi
 
+# --- Prompt user for URL and write to src/url.txt ---
+URL_FILE="$TARGET_DIR/src/url.txt"
+
+echo ""
+printf "🌐 Enter the URL to store in src/url.txt: "
+read USER_URL
+
+echo "→ Writing URL to $URL_FILE"
+echo "$USER_URL" > "$URL_FILE"
+echo "✓ URL saved."
+
 # --- Create venv ---
 echo "→ Creating Python virtual environment..."
 python3 -m venv .venv
@@ -87,8 +98,11 @@ EOF
 
 chmod +x "$OPEN_SCRIPT"
 
-
-echo "🎉 Installation complete!"
+echo ""
+echo "✨ Setup complete!"
+echo "To start using the new commands immediately, run:"
+echo "  exec zsh"
+echo "or open a new terminal window"
 echo ""
 echo "You can now run:"
 echo "👉 gpt-converter      # runs src/run.py"

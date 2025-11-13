@@ -23,10 +23,15 @@ import sys
 
 # ---------------- CONFIG ----------------
 
-URL = '<url here'
+
 
 BASE_DIR = os.path.dirname(os.path.realpath(__file__))
 PROJECT_ROOT = os.path.abspath(os.path.join(BASE_DIR, ".."))
+
+URL_PATH = os.path.join(BASE_DIR, "url.txt")
+
+with open(URL_PATH, "r") as f:
+    URL = f.read().strip()
 
 FILES_FOLDER = os.path.join(PROJECT_ROOT, "images")
 STYLE_FOLDER = os.path.join(PROJECT_ROOT, "style")
@@ -129,6 +134,20 @@ def cmd_w():
 
 # ---------------- FILESYSTEM HELPERS ----------------
 
+def close_all_chrome_tabs_and_open_new():
+    # small delay to ensure Chrome is active
+    time.sleep(0.7)
+
+    # Close tabs/windows a few times
+    for _ in range(5):      # adjusts how many times to press Cmd-W
+        cmd_w()
+        time.sleep(0.2)
+
+    # Open a new tab
+    cmd_t()
+    time.sleep(0.4)
+
+
 def wipe_tmp_upload():
     if not os.path.exists(TEMP_UPLOAD_DIR):
         os.makedirs(TEMP_UPLOAD_DIR, exist_ok=True)
@@ -148,7 +167,7 @@ def wipe_tmp_upload():
 
 
 def copy_initial_style():
-    style_dir = os.path.dirname(STYLE_FOLDER)
+    style_dir = STYLE_FOLDER   # <-- FIXED
     files = sorted([
         f for f in os.listdir(style_dir)
         if os.path.isfile(os.path.join(style_dir, f)) and not f.startswith(".")
@@ -167,6 +186,7 @@ def copy_initial_style():
 
     print(f"[i] Copied initial style file → {dest}")
     return dest
+
 
 
 def create_download_spacers(count=20):
@@ -241,8 +261,18 @@ def move_latest_download(target_name):
 
 # ---------------- MISC HELPERS ----------------
 
-def open_chrome():
-    osa('tell application "Google Chrome" to activate')
+# def open_chrome():
+#     osa('tell application "Google Chrome" to activate')
+
+def focus_chrome():
+    osa("""
+    tell application "Google Chrome"
+        activate
+        if (count of windows) = 0 then
+            make new window
+        end if
+    end tell
+    """)
 
 def add_base_image(path):
     shutil.copy2(path, TEMP_UPLOAD_DIR)
@@ -367,10 +397,11 @@ def close_batch_tabs(batch_count):
 # ---------------- MAIN ----------------
 
 def main():
+    wipe_tmp_upload()
+    focus_chrome()
+    close_all_chrome_tabs_and_open_new()
     create_download_spacers()
     copy_initial_style()
-    wipe_tmp_upload()
-    open_chrome()
 
     files = sorted([
         f for f in os.listdir(FILES_FOLDER)
